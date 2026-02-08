@@ -1,0 +1,15 @@
+project_name: "Nightingale"
+version: "0.1.0"
+sandbox_dir: ".sandbox"
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+agents:
+  marathon:
+    model: "gemini-3-pro"
+    timeout: 300
+  verifier:
+    model: "gemini-3-flash"
+    timeout: 60
+demo:
+  repo_path: "./demo_repo"
