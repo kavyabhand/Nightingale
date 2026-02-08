@@ -12,4 +12,4 @@ agents:
     model: "gemini-3-flash"
     timeout: 60
 demo:
-  repo_path: "./demo_repo"
+  repo_path: "."

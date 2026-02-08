@@ -6,7 +6,7 @@ from nightingale.types import IncidentEvent
 class RepositoryContextLoader:
     def __init__(self, repo_path: str):
         self.repo_path = repo_path
-        self.repo = git.Repo(repo_path)
+        self.repo = git.Repo(repo_path, search_parent_directories=True)
 
     def get_file_content(self, file_path: str, commit_sha: str = "HEAD") -> str:
         try:

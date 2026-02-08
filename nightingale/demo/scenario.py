@@ -7,7 +7,7 @@ from nightingale.config import config
 def run_demo():
     print("=== Nightingale Demo: Broken CI/CD Pipeline ===\n")
     
-    repo_path = os.path.abspath(config.get("demo.repo_path", "./demo_repo"))
+    repo_path = os.path.abspath(config.get("demo.repo_path", "."))
     print(f"Target Repository: {repo_path}")
     
     # Simulate an event based on the broken repo

@@ -16,7 +16,13 @@ class Sandbox:
         """Creates a clean copy of the repo in the sandbox directory."""
         if os.path.exists(self.sandbox_path):
             shutil.rmtree(self.sandbox_path)
-        shutil.copytree(self.original_repo_path, self.sandbox_path)
+            
+        # Ignore .git and .sandbox to prevent recursion and huge copies
+        shutil.copytree(
+            self.original_repo_path, 
+            self.sandbox_path,
+            ignore=shutil.ignore_patterns(".git", ".sandbox", "__pycache__", "*.pyc")
+        )
         # Initialize git in sandbox if not already (it should be copied, but good to be safe)
         if not os.path.exists(os.path.join(self.sandbox_path, ".git")):
              git.Repo.init(self.sandbox_path)

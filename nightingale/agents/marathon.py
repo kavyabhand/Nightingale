@@ -70,7 +70,7 @@ def test_subtract():
         fix_plan = FixPlan(
             rationale="Identified incorrect assertion in test_subtract. Expected 1 but 2-2=0.",
             files_to_change=[
-                FileDiff(file_path="test_app.py", change_type="modify", diff_content=fix_content)
+                FileDiff(file_path="demo_repo/test_app.py", change_type="modify", diff_content=fix_content)
             ],
             verification_steps=["python3 -m pytest"],
             confidence_score=0.95,
