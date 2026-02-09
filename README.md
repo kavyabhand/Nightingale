@@ -1,52 +1,104 @@
-# Nightingale: The Autonomous On-Call SRE
+# Nightingale 🐦
 
-**Target:** Google DeepMind Gemini 3 Hackathon (Action Era, Vibe Engineering)  
-**Tagline:** The Autonomous On-Call SRE for CI/CD Failures
+> Autonomous CI/CD Repair Agent powered by Gemini 3
 
-## Overview
+[![Gemini 3 Hackathon](https://img.shields.io/badge/Gemini%203-Hackathon-blue)](https://gemini3.devpost.com/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Nightingale is an autonomous agentic system designed to replace the need for "3am on-call engineers" for release-blocking CI/CD failures. It detects pipeline failures, reasons over the repository using long-horizon analysis, identifies root causes, applies fixes in a sandbox, verifying them, and either auto-resolves the incident or escalates with a precise diagnostic report.
+## What is Nightingale?
 
-## Value Proposition
+Nightingale is an **autonomous SRE agent** that monitors your CI/CD pipelines and automatically repairs failures using Gemini 3's advanced reasoning capabilities.
 
--   **Zero-Touch Resolution:** Automatically fixes flaky tests, dependency mismatches, and configuration errors.
--   **Risk-Aware:** Only applies fixes in a sandbox and computes a calibrated confidence score.
--   **Explainable:** Every decision is backed by a rationale and verifiable evidence.
--   **24/7 Availability:** Never sleeps, ensuring pipelines are always green.
+When your tests break at 2 AM, Nightingale:
+1. **Analyzes** the failure logs
+2. **Reasons** about root causes using Gemini 3
+3. **Generates** minimal, targeted fixes
+4. **Verifies** in an isolated sandbox
+5. **Decides** to auto-resolve or escalate
+
+## Quick Start
+
+```bash
+# Clone and install
+git clone https://github.com/yourusername/nightingale.git
+cd nightingale
+pip install -r requirements.txt
+
+# Set your Gemini API key
+export GEMINI_API_KEY=your_key_here  # Linux/Mac
+set GEMINI_API_KEY=your_key_here     # Windows
+
+# Run the demo
+python main.py --demo
+```
+
+## Features
+
+### Reflective Reasoning Loop
+- Up to 3 fix attempts
+- Learns from verification failures
+- Feeds logs back for root cause revision
+
+### Weighted Confidence Scoring
+```
+confidence = 
+    35% × test_pass_ratio +
+    25% × inverse_blast_radius +
+    15% × attempt_penalty +
+    15% × risk_modifier +
+    10% × self_consistency
+```
+
+### Safety First
+- Sandbox isolation (never touches production)
+- Blast radius analysis
+- Automatic escalation when uncertain
+- See [SAFETY.md](SAFETY.md) for details
+
+### GitHub Integration
+- Webhook listener for CI events
+- Dynamic workflow parsing
+- No hardcoded test commands
+
+## Usage
+
+### Demo Mode
+```bash
+python main.py --demo
+```
+
+### Webhook Server
+```bash
+python main.py --webhook --port 8000
+```
+
+### API Endpoints
+- `GET /health` - Health check
+- `POST /webhook/github` - GitHub webhook receiver
+- `POST /incident` - Direct incident submission
 
 ## Architecture
 
-Nightingale is built on a modular architecture:
-1.  **Incident Listener:** Ingests failure signals.
-2.  **Repo Context Loader:** Prepares the codebase for analysis.
-3.  **Marathon Agent (Gemini 3 Pro):** Reasons about the failure and plans a fix.
-4.  **Verification Agent (Gemini 3 Flash):** Executes the fix and validates it in a sandbox.
-5.  **Orchestrator:** Manages the entire lifecycle.
+See [ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md) for the full system architecture.
 
-## How to Run the Demo
-
-Nightingale comes with a self-contained demo scenario that simulates a broken CI pipeline.
-
-### Prerequisites
-
--   Python 3.10+
--   `pip install -r requirements.txt`
-
-### Run Demo
-
-```bash
-python3 main.py --demo
+```
+Incident → Parse → Context → [Analyze → Fix → Test]×3 → Score → Decide → Report
+                              └─── Reflective Loop ───┘
 ```
 
-**What to expect:**
-1.  Nightingale detects a test failure in `demo_repo/test_app.py`.
-2.  It spins up a sandbox environment.
-3.  The Marathon Agent analyzes the failure (assertion error).
-4.  It applies a fix to the code.
-5.  The Verification Agent runs `pytest` in the sandbox.
-6.  Tests pass, and Nightingale outputs a **RESOLVE** decision with high confidence.
+## Documentation
 
-## Safety Guarantees
+- [ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md) - System architecture
+- [SAFETY.md](SAFETY.md) - Safety and blast radius mitigation
+- [TELEMETRY.md](TELEMETRY.md) - Metrics and logging
+- [DEMO_SCRIPT.md](DEMO_SCRIPT.md) - 3-minute pitch script
 
--   **Sandboxing:** No changes are made to the actual repository without explicit approval or configuration.
--   **Confidence Scoring:** Low-confidence fixes represent valid hypotheses but are strictly escalated for human review.
+## Gemini 3 Integration
+
+Nightingale leverages Gemini 3's capabilities:
+
+- **Advanced Reasoning**: Multi-step root cause analysis
+- **Structured Output**: JSON schema validation for reliable parsing
+- **Large Context**: Full repository context for informed decisions
+- **Self-Correction**: Reflective loop for iterative improvement

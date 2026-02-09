@@ -1,15 +1,41 @@
 project_name: "Nightingale"
 version: "0.1.0"
 sandbox_dir: ".sandbox"
+
 logging:
   level: "INFO"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "nightingale.log"
+
 agents:
   marathon:
-    model: "gemini-3-pro"
+    model: "gemini-2.0-flash"
     timeout: 300
+    max_attempts: 3
   verifier:
-    model: "gemini-3-flash"
+    model: "gemini-2.0-flash"
     timeout: 60
+
+gemini:
+  rate_limit: 15  # Free tier: 15 RPM
+  max_retries: 5
+  backoff_factor: 2.0
+
+confidence:
+  resolve_threshold: 0.85
+  weights:
+    test_pass_ratio: 0.35
+    inverse_blast_radius: 0.25
+    attempt_penalty: 0.15
+    risk_modifier: 0.15
+    self_consistency: 0.10
+
+webhook:
+  host: "0.0.0.0"
+  port: 8000
+  secret: ""  # Set via WEBHOOK_SECRET env var
+
 demo:
   repo_path: "."
+
+cleanup_sandbox: true
