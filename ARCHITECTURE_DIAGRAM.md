@@ -1,107 +1,94 @@
 # Nightingale Architecture
 
-## System Architecture Diagram
-
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           NIGHTINGALE ARCHITECTURE                           │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                     NIGHTINGALE AGENT                         │
+│              Autonomous CI SRE System                         │
+└──────────────────────────────────────────────────────────────┘
 
-                              ┌─────────────────┐
-                              │  GitHub Actions │
-                              │  CI/CD Pipeline │
-                              └────────┬────────┘
-                                       │ webhook (failure)
-                                       ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│  API LAYER                                                                    │
-│  ┌────────────────────────────────────────────────────────────────────────┐  │
-│  │  FastAPI Webhook Server (/webhook/github)                              │  │
-│  │  - Signature verification                                               │  │
-│  │  - Event parsing (workflow_run, check_run)                             │  │
-│  │  - Background task queuing                                              │  │
-│  └────────────────────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────────────┘
-                                       │
-                                       ▼ IncidentEvent
-┌──────────────────────────────────────────────────────────────────────────────┐
-│  ORCHESTRATOR                                                                 │
-│  ┌────────────────────────────────────────────────────────────────────────┐  │
-│  │  1. Context Loading     → RepositoryContextLoader (git)                │  │
-│  │  2. Workflow Parsing    → WorkflowParser (dynamic test cmds)           │  │
-│  │  3. Reflective Loop     → MarathonAgent + VerificationAgent            │  │
-│  │  4. Confidence Scoring  → ConfidenceScorer (weighted formula)          │  │
-│  │  5. Decision Engine     → ResolutionEngine (resolve/escalate)          │  │
-│  │  6. Report Generation   → EscalationReporter                           │  │
-│  └────────────────────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────────────┘
-                                       │
-          ┌────────────────────────────┼────────────────────────────┐
-          ▼                            ▼                            ▼
-┌─────────────────────┐  ┌─────────────────────────┐  ┌─────────────────────┐
-│  MARATHON AGENT     │  │  VERIFICATION AGENT     │  │  GEMINI CLIENT      │
-│                     │  │                         │  │                     │
-│  • Multi-attempt    │  │  • Sandbox execution    │  │  • Rate limiting    │
-│  • Reflective loop  │  │  • Test output parsing  │  │  • Retry w/ backoff │
-│  • Context building │  │  • Pass/fail counting   │  │  • JSON validation  │
-│  • Prompt crafting  │  │                         │  │  • Pydantic models  │
-└─────────────────────┘  └─────────────────────────┘  └─────────────────────┘
-          │                            │                            │
-          └────────────────────────────┼────────────────────────────┘
-                                       │
-                                       ▼
-                    ┌──────────────────────────────────┐
-                    │           SANDBOX                 │
-                    │  ┌────────────────────────────┐  │
-                    │  │  Isolated copy of repo     │  │
-                    │  │  - Apply diffs             │  │
-                    │  │  - Run tests               │  │
-                    │  │  - Capture output          │  │
-                    │  └────────────────────────────┘  │
-                    └──────────────────────────────────┘
-                                       │
-          ┌────────────────────────────┼────────────────────────────┐
-          ▼                            ▼                            ▼
-┌─────────────────────┐  ┌─────────────────────────┐  ┌─────────────────────┐
-│  BLAST RADIUS       │  │  CONFIDENCE SCORER      │  │  RESOLUTION ENGINE  │
-│  ANALYZER           │  │                         │  │                     │
-│  • File count ratio │  │  Weighted formula:      │  │  Threshold: 85%     │
-│  • Risk levels      │  │  35% test_pass_ratio    │  │                     │
-│  • File criticality │  │  25% blast_radius       │  │  ≥85% → RESOLVE     │
-│                     │  │  15% attempt_penalty    │  │  <85% → ESCALATE    │
-│                     │  │  15% risk_modifier      │  │                     │
-│                     │  │  10% self_consistency   │  │                     │
-└─────────────────────┘  └─────────────────────────┘  └─────────────────────┘
+                         ┌─────────────┐
+                         │  CI/CD Hook  │
+                         │ (Webhook)    │
+                         └──────┬──────┘
+                                │ POST /webhook
+                                ▼
+                    ┌───────────────────────┐
+                    │   Incident Listener   │
+                    │   (listener.py)       │
+                    │   Parses event JSON   │
+                    └───────────┬───────────┘
+                                │ IncidentEvent
+                                ▼
+┌───────────────────────────────────────────────────────────────┐
+│                      ORCHESTRATOR                             │
+│                    (orchestrator.py)                           │
+│                                                               │
+│  1. Load repository context                                   │
+│  2. Parse CI workflows for test commands                      │
+│  3. Launch reflective reasoning loop                          │
+│  4. Coordinate sandbox verification                           │
+│  5. Calculate confidence & make decision                      │
+│  6. Generate escalation report                                │
+└───────────────────────────────┬───────────────────────────────┘
+                                │
+              ┌─────────────────┼─────────────────┐
+              ▼                 ▼                 ▼
+  ┌───────────────┐  ┌──────────────┐  ┌──────────────────┐
+  │ Marathon Agent │  │   Sandbox    │  │  Decision Engine │
+  │ (marathon.py)  │  │ (sandbox.py) │  │ (confidence.py)  │
+  │                │  │              │  │                  │
+  │ Reflective     │  │ SHA-256      │  │ 5-Factor Score:  │
+  │ Reasoning Loop │  │ Integrity    │  │ · Test Ratio 35% │
+  │ Max 3 Attempts │  │ Hashing      │  │ · Blast Rad  25% │
+  │                │  │              │  │ · Attempt    15% │
+  │ Feeds failure  │  │ Isolated     │  │ · Risk       15% │
+  │ logs back for  │  │ Copy of Repo │  │ · Consistency10% │
+  │ re-analysis    │  │              │  │                  │
+  └───────┬───────┘  │ Test Runner  │  │ Threshold: 85%   │
+          │          └──────────────┘  │ ≥85% → Resolve   │
+          ▼                            │ <85% → Escalate   │
+  ┌───────────────┐                    └──────────────────┘
+  │  Gemini 3 API │
+  │               │
+  │ SDK: genai    │
+  │ Model:        │
+  │ gemini-3-     │
+  │ flash-preview │
+  │               │
+  │ Structured    │
+  │ JSON Output   │
+  │ + Pydantic    │
+  │ Validation    │
+  └───────────────┘
 
+Supporting Components:
+┌──────────────┐  ┌──────────────┐  ┌──────────────────┐
+│ Workflow     │  │ Blast Radius │  │ Escalation       │
+│ Parser       │  │ Analyzer     │  │ Reporter         │
+│              │  │              │  │                  │
+│ Detects test │  │ Classifies   │  │ Markdown report  │
+│ commands from│  │ file risk:   │  │ with confidence  │
+│ GitHub       │  │ LOW/MED/HIGH │  │ breakdown &      │
+│ Actions YAML │  │ /CRITICAL    │  │ verification     │
+└──────────────┘  └──────────────┘  └──────────────────┘
 ```
-
-## Component Descriptions
-
-### API Layer
-- **FastAPI Server**: Receives GitHub webhooks, validates signatures, queues incidents
-
-### Core Pipeline
-- **Orchestrator**: Main controller coordinating all components
-- **RepositoryContextLoader**: Git integration for file access
-- **WorkflowParser**: Extracts test commands from `.github/workflows/`
-
-### Agents
-- **MarathonAgent**: Gemini-powered reasoning with 3-attempt reflective loop
-- **VerificationAgent**: Runs tests and parses results
-
-### Analysis
-- **BlastRadiusAnalyzer**: Calculates change impact
-- **ConfidenceScorer**: Weighted multi-factor scoring
-- **ResolutionEngine**: Resolve vs escalate decision
-
-### Infrastructure
-- **GeminiClient**: API client with retries and validation
-- **Sandbox**: Isolated test environment
-- **Logger**: Structured logging with Rich console output
 
 ## Data Flow
 
-```
-Incident → Parse → Context → [Analyze → Fix → Test]×3 → Score → Decide → Report
-                              └─── Reflective Loop ───┘
-```
+1. **CI failure** → Webhook receives event
+2. **Parse** → Extract incident details (repo, branch, commit, logs)
+3. **Context** → Load repository files, recent commits, failing test content
+4. **Analyze** → Gemini 3 identifies root cause, proposes fix
+5. **Sandbox** → Apply fix in isolated copy, run tests
+6. **Verify** → Parse test output (pass/fail counts)
+7. **Score** → Calculate 5-factor weighted confidence
+8. **Decide** → Auto-resolve (≥85%) or escalate to human (<85%)
+9. **Report** → Generate detailed Markdown incident report
+
+## Key Design Principles
+
+- **No fake logic** — All reasoning from live Gemini 3 API
+- **Sandbox isolation** — Original repo never modified
+- **Reflective loop** — Failed fixes feed back for re-analysis
+- **Confidence-based decisions** — No blind auto-deployment
+- **Single API key** — Clean, production-grade configuration

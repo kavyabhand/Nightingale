@@ -78,7 +78,6 @@ class MarathonAgent:
             response = self.client.generate_structured(
                 prompt=prompt,
                 response_model=GeminiFixResponse,
-                model="pro",
                 incident_id=event.id
             )
         except GeminiClientError as e:

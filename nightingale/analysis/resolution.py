@@ -1,9 +1,5 @@
-class ResolutionEngine:
-    def decide(self, confidence_score: float) -> str:
-        """
-        Decides whether to 'resolve' or 'escalate'.
-        """
-        THRESHOLD = 0.85
-        if confidence_score >= THRESHOLD:
-            return "resolve"
-        return "escalate"
+# Deprecated – ResolutionEngine now lives in confidence.py
+# This file exists only for backward compatibility.
+from nightingale.analysis.confidence import ResolutionEngine
+
+__all__ = ["ResolutionEngine"]

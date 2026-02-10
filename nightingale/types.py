@@ -69,12 +69,32 @@ class GeminiFixResponse(BaseModel):
     @field_validator('files_to_change')
     @classmethod
     def validate_files(cls, v):
+        normalized = []
         for f in v:
-            if 'file_path' not in f or 'change_type' not in f or 'content' not in f:
+            entry = dict(f)
+            # Normalize field names from Gemini variation
+            if 'file' in entry and 'file_path' not in entry:
+                entry['file_path'] = entry.pop('file')
+            if 'path' in entry and 'file_path' not in entry:
+                entry['file_path'] = entry.pop('path')
+            if 'type' in entry and 'change_type' not in entry:
+                entry['change_type'] = entry.pop('type')
+            if 'action' in entry and 'change_type' not in entry:
+                entry['change_type'] = entry.pop('action')
+            for alt in ['changes', 'patch', 'diff', 'code']:
+                if alt in entry and 'content' not in entry:
+                    entry['content'] = entry.pop(alt)
+            # Normalize change_type values
+            type_map = {'create': 'add', 'update': 'modify', 'remove': 'delete', 'edit': 'modify'}
+            if 'change_type' in entry:
+                entry['change_type'] = type_map.get(entry['change_type'], entry['change_type'])
+            # Validate required fields
+            if 'file_path' not in entry or 'change_type' not in entry or 'content' not in entry:
                 raise ValueError("Each file must have file_path, change_type, and content")
-            if f['change_type'] not in ['modify', 'add', 'delete']:
-                raise ValueError(f"Invalid change_type: {f['change_type']}")
-        return v
+            if entry['change_type'] not in ['modify', 'add', 'delete']:
+                raise ValueError(f"Invalid change_type: {entry['change_type']}")
+            normalized.append(entry)
+        return normalized
 
 # === Reasoning Trace ===
 

@@ -1,34 +1,59 @@
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
+*$py.class
 *.so
-*.egg
-*.egg-info/
-dist/
+.Python
 build/
-*.manifest
-*.spec
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Jupyter Notebooks
-.ipynb_checkpoints/
-*.ipynb
-
-
-# VSCode
-.vscode/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Environment
-.env
-.venv/
+# Virtual Environments
 venv/
+env/
+ENV/
+.env
+.venv
+env.bak/
+venv.bak/
 
-# Misc
+# Nightingale Artifacts
+.sandbox/
+.nightingale_cache/
+nightingale.log
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
+junit/
+
+# IDEs
+.idea/
+.vscode/
 *.swp
-*.bak
-*.tmp
+*.swo
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Demo & Submission Files (Ignored for clean repo)
+DEMO_SCRIPT.md
+DEMO_VIDEO_GUIDE.md
+SUBMISSION_CHECKLIST.md
+demo_setup.sh
+info.txt

@@ -93,12 +93,16 @@ Incident → Parse → Context → [Analyze → Fix → Test]×3 → Score → D
 - [SAFETY.md](SAFETY.md) - Safety and blast radius mitigation
 - [TELEMETRY.md](TELEMETRY.md) - Metrics and logging
 - [DEMO_SCRIPT.md](DEMO_SCRIPT.md) - 3-minute pitch script
+- [DEMO_VIDEO_GUIDE.md](DEMO_VIDEO_GUIDE.md) - Step-by-step demo commands
 
 ## Gemini 3 Integration
 
-Nightingale leverages Gemini 3's capabilities:
+Nightingale uses the official `google-genai` SDK (v1.62.0+) with `models/gemini-3-flash-preview` for all reasoning. No legacy SDK, no deprecated endpoints.
 
-- **Advanced Reasoning**: Multi-step root cause analysis
-- **Structured Output**: JSON schema validation for reliable parsing
-- **Large Context**: Full repository context for informed decisions
-- **Self-Correction**: Reflective loop for iterative improvement
+**Structured JSON Output**: Every Gemini call returns validated JSON parsed through Pydantic models. The agent requests structured responses with explicit schema examples, and retries with corrective prompts if the response doesn't validate. This ensures reliable, machine-parseable output from every API call.
+
+**Reflective Reasoning Loop**: The Marathon agent makes up to 3 fix attempts. If a fix fails verification, the failure logs are fed back into the next prompt, forcing Gemini to re-analyze the root cause and propose a different approach. This mimics how senior engineers debug — they learn from what didn't work.
+
+**Sandbox Safety**: Fixes are applied in an isolated copy of the repository. The original repo is SHA-256 hashed before and after to guarantee zero contamination. No production code is ever modified.
+
+**Confidence-Based Decisions**: A 5-factor weighted formula (test pass ratio 35%, blast radius 25%, attempt penalty 15%, risk modifier 15%, self-consistency 10%) produces a confidence score. Above 85%: auto-resolve. Below: escalate to a human engineer with a full incident report including root cause analysis, verification results, and confidence breakdown.

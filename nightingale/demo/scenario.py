@@ -1,6 +1,6 @@
 """
 Nightingale Demo Scenario
-Runs the autonomous agent on a test case
+Runs the full autonomous agent on a simulated CI failure
 """
 import os
 import time
@@ -12,21 +12,23 @@ from nightingale.core.logger import logger, console
 from nightingale.config import config
 
 
-def run_demo():
+def run_demo(record_mode: bool = False):
     """Run the demo scenario with a broken test."""
-    
+
     console.print("""
 [bold cyan]
-    ♫ ♪ NIGHTINGALE ♪ ♫
+    NIGHTINGALE
     Autonomous CI SRE Agent
-    ━━━━━━━━━━━━━━━━━━━━━━━
+    Powered by Gemini 3
 [/bold cyan]
     """)
-    
+
     repo_path = os.path.abspath(config.get("demo.repo_path", "."))
-    console.print(f"[dim]Target Repository: {repo_path}[/dim]\n")
-    
-    # Simulate an incident based on the broken repo
+    console.print(f"[dim]Target Repository: {repo_path}[/dim]")
+    if record_mode:
+        console.print("[bold yellow][record-mode] Replaying cached API responses[/bold yellow]")
+    console.print()
+
     incident_event = IncidentEvent(
         id=f"demo-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
         type=IncidentType.TEST_FAILURE,
@@ -62,33 +64,25 @@ FAILED demo_repo/test_app.py::test_subtract - AssertionError: assert 0 == 1
                 duration_ms=120
             )
         ],
-        metadata={
-            "trigger": "demo",
-            "source": "manual"
-        }
+        metadata={"trigger": "demo", "source": "manual"}
     )
-    
-    console.print("[bold red]🚨 CI FAILURE DETECTED![/bold red]")
+
+    console.print("[bold red]CI FAILURE DETECTED[/bold red]")
     console.print("[dim]Dispatching Nightingale Agent...[/dim]\n")
-    
-    time.sleep(1)  # Dramatic pause
-    
-    try:
-        orchestrator = Orchestrator()
-        report = orchestrator.process_incident(incident_event)
-        
-        console.print("\n[bold green]✨ Demo Complete![/bold green]")
-        
-        if report.decision.value == "resolve":
-            console.print("[green]The agent successfully fixed the issue![/green]")
-        else:
-            console.print("[yellow]The agent escalated for human review.[/yellow]")
-            
-    except Exception as e:
-        console.print(f"\n[bold red]Error during demo: {e}[/bold red]")
-        import traceback
-        traceback.print_exc()
-        raise
+
+    time.sleep(0.3)
+
+    orchestrator = Orchestrator()
+    report = orchestrator.process_incident(incident_event)
+
+    console.print("\n[bold green]Demo Complete[/bold green]")
+
+    if report.decision.value == "resolve":
+        console.print("[green]The agent successfully resolved the issue.[/green]")
+    else:
+        console.print("[yellow]The agent escalated the issue for human review.[/yellow]")
+
+    return report
 
 
 if __name__ == "__main__":
