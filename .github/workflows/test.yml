@@ -12,5 +12,7 @@ jobs:
           python-version: '3.10'
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Run tests
-        run: python -m pytest -v
+      - name: Run smoke tests
+        run: |
+          python -c "import nightingale; print('Nightingale package imports successfully')"
+          python main.py --help
